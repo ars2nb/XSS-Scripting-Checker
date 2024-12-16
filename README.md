@@ -1,5 +1,5 @@
 # Step 1: First, ensure you have the necessary library by running the following command:
-  pip install tqdm
+# pip install tqdm
 
 # Example of a GET Request:
 # You can test for vulnerability using the following URL:
