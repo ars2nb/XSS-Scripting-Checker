@@ -1,126 +1,138 @@
-# XSS Testing Script
+---
 
-This script is designed to perform **Stored** and **Reflected XSS** (Cross-Site Scripting) vulnerability testing on web applications. It takes in a list of XSS payloads (from either files or a folder), and tests two types of XSS vulnerabilities across specified URLs.
+# XSS Scripting-Checker
+
+This Python script is designed for testing **Stored XSS** and **Reflected XSS** vulnerabilities on web applications. The script allows you to test a list of XSS payloads against specified URLs. It automatically finds and lists available payload files in the `payloads` directory and allows you to select one for testing.
 
 ### Features:
-- **Stored XSS**: Tests POST requests to a URL for persistent XSS vulnerabilities.
-- **Reflected XSS**: Tests GET requests to a URL for reflected XSS vulnerabilities.
-- **Parallel Testing**: Runs both types of XSS tests concurrently using `ThreadPoolExecutor` to speed up the process.
-- **Logging**: Logs the results of each payload test, including whether vulnerabilities were found or not.
-- **Progress Bar**: Displays a progress bar (via `tqdm`) to show the status of ongoing tests.
+- **Stored XSS Testing**: Tests for vulnerabilities where payloads are stored on the server.
+- **Reflected XSS Testing**: Tests for vulnerabilities where payloads are reflected immediately back to the user in the response.
+- **Automatic Payload Selection**: Automatically detects and lists payload files in the `payloads` folder.
+- **Flexible URL Input**: Allows users to specify the URLs for both Stored and Reflected XSS testing.
+- **Logging**: Logs the results of the tests to a file for later review.
+- **Threaded Testing**: Tests are run concurrently using multiple threads to speed up the process.
 
 ---
 
-## Prerequisites
+## Requirements
 
-Before running the script, you need to install the required Python libraries. You can install the dependencies using `pip`.
+- **Python 3.x**  
+  Ensure that Python 3.x is installed on your system. You can download Python from the [official website](https://www.python.org/downloads/).
 
-```bash
-pip install requests tqdm
-```
+- **Required Libraries**  
+  The script requires the following Python libraries:
+  - `requests`: For making HTTP requests to the target URLs.
+  - `tqdm`: For displaying a progress bar during testing.
+  - `concurrent.futures`: For running tests concurrently (multi-threading).
 
-Ensure that your environment has the following libraries:
-- `requests` (for sending HTTP requests)
-- `tqdm` (for displaying a progress bar)
+  You can install the required libraries using `pip`:
 
-If you're running the script on a local machine, you'll need Python 3.x or later installed.
+  ```bash
+  pip install requests tqdm
+  ```
+
+---
+
+## Setup
+
+1. **Clone or Download the Repository**
+
+   Clone or download the repository to your local machine:
+
+   ```bash
+   git clone https://github.com/fish-hue/XSS-Scripting-Checker.git
+   ```
+
+   or just download the ZIP file and extract it.
+
+2. **Folder Structure**
+
+   The folder structure should look like this:
+
+   ```
+   xss-check/
+   ├── payloads/
+   │   ├── payload1.txt
+   │   └── payload2.txt
+   └── xss-chk.py
+   ```
+
+   - `payloads/`: This folder contains the payload files. These files should have `.txt` extensions.
+   - `xss-chk.py`: This is the main script that performs the XSS tests.
 
 ---
 
 ## How to Use
 
-### 1. Prepare XSS Payloads:
-The script reads payloads from either individual files or an entire folder containing `.txt` or `.payload` files. 
+1. **Navigate to the `xss-check` Directory**  
+   Open a terminal and navigate to the `xss-check` directory:
 
-- **Create Payload Files**: Place XSS payloads into `.txt` or `.payload` files (e.g., `xss_payloads.txt`).
-- **Directory Structure**: Place the payload files into a folder, say `payloads/`.
-
-### 2. Running the Script:
-Once the payload files are ready, you can execute the script. Follow these steps:
-
-1. **Run the Script**:
    ```bash
-   python xss_test_script.py
+   cd path/to/xss-check
    ```
 
-2. **Input the Details**:
-   The script will prompt for the following:
-   - **Stored XSS URL**: The URL where you want to test for stored XSS vulnerabilities (POST request).
-   - **Reflected XSS URL**: The URL where you want to test for reflected XSS vulnerabilities (GET request with parameter).
-   - **Payload Folder Path**: The folder path containing the payload files.
-   - **Timeout**: Specify a timeout for HTTP requests (e.g., `10` seconds).
+2. **Run the Script**  
+   Execute the script using Python:
 
-   Example input:
-   ```
-   Enter the URL for Stored XSS testing: https://example.com/store_xss
-   Enter the URL for Reflected XSS testing (with GET parameter): https://example.com/reflect_xss?input=
-   Enter the path to the folder containing payload files: ./payloads
-   Enter the timeout value for requests (in seconds, e.g., 10): 10
+   ```bash
+   python xss-chk.py
    ```
 
-3. **Review the Results**:
-   After testing, the script will log the results in `xss_test_results.log` and print a summary to the terminal, showing how many payloads were tested and how many vulnerabilities were found.
+3. **Follow the Prompts**  
+   The script will guide you through the testing process:
 
-   Example output:
-   ```
-   [+] Stored XSS Vulnerability Found with Payload: <script>alert(1)</script>
-   [+] Reflected XSS Vulnerability Found with Payload: <img src="x" onerror="alert(1)">
-   ```
+   - **Enter the URL for Stored XSS Testing**: Provide the URL of the page where stored XSS is possible (e.g., `http://example.com/submit`).
+   - **Enter the URL for Reflected XSS Testing**: Provide the URL for reflected XSS testing (e.g., `http://example.com/search?q=`).
+   - **Choose a Payload File**: The script will automatically list all available `.txt` payload files in the `payloads/` folder. Select the appropriate file by number.
+   - **Set Timeout**: The script will ask for a timeout value (in seconds) for the HTTP requests.
+   - **Confirm to Proceed**: You will be asked if you want to proceed with the testing.
 
-4. **Logs**:
-   All results are logged to `xss_test_results.log`. Each payload is tested for both stored and reflected XSS vulnerabilities, and the script will log whether it found a vulnerability or not for each payload.
+4. **View the Results**  
+   The script will display the results of the testing in the terminal. It will also log the results to a file called `xss_test_results.log` for future reference.
 
 ---
 
-## Example of Output
+## Example
 
-### Console:
+Here’s an example of how it might look when running the script:
 
-```
+```bash
 Welcome to the XSS Testing Script!
-Enter the URL for Stored XSS testing: https://example.com/store_xss
-Enter the URL for Reflected XSS testing (with GET parameter): https://example.com/reflect_xss?input=
-Enter the path to the folder containing payload files: ./payloads
+
+Enter the URL for Stored XSS testing (e.g., example.com/submit): http://example.com/submit
+Enter the URL for Reflected XSS testing (e.g., example.com/search?q=): http://example.com/search?q=
+
+Available Payload Files:
+1. payload1.txt
+2. payload2.txt
+
+Select a payload file by number: 1
+
 Enter the timeout value for requests (in seconds, e.g., 10): 10
+
 Do you want to proceed with testing? (yes/no): yes
 
-Testing Stored XSS: 100%|███████████████████████████████████████████| 10/10
-Testing Reflected XSS: 100%|███████████████████████████████████████████| 10/10
+Testing Stored XSS:
+[+] Stored XSS Vulnerability Found with Payload: <script>alert('XSS')</script>
+[-] No Stored XSS Vulnerability Detected with Payload: <img src="x" onerror="alert(1)">
+...
+
+Testing Reflected XSS:
+[+] Reflected XSS Vulnerability Found with Payload: <script>alert('XSS')</script>
+[-] No Reflected XSS Vulnerability Detected with Payload: <img src="x" onerror="alert(1)">
+...
 
 --- Summary of XSS Testing ---
 Total Payloads Tested: 10
-Stored XSS Vulnerabilities Found: 2
+Stored XSS Vulnerabilities Found: 1
 Reflected XSS Vulnerabilities Found: 1
-
-XSS Tests Completed.
-```
-
-### Log File (`xss_test_results.log`):
-
-```
-2024-12-16 15:30:02 - [+] Stored XSS Vulnerability Found with Payload: <script>alert(1)</script>
-2024-12-16 15:30:05 - [-] No Stored XSS Vulnerability Detected with Payload: <img src="x" onerror="alert(1)">
-2024-12-16 15:30:10 - [+] Reflected XSS Vulnerability Found with Payload: <img src="x" onerror="alert(1)">
-...
 ```
 
 ---
 
 ## Troubleshooting
 
-### "No valid payloads found."
-- Ensure that the payload files exist in the specified directory and contain valid payloads.
-- Verify that the folder path and filenames are correct.
-
-### "Error: The file '{file_path}' was not found."
-- Check that the file exists and that the script has the necessary permissions to read it.
-
-### "Error with request: ..."
-- Check the URL you provided and ensure the server is reachable.
-- Ensure that your firewall or security software isn't blocking requests.
+- **File Not Found**: If the script can't find the `payloads/` folder or the specified payload file, double-check that the folder and the `.txt` files are correctly placed in the same directory as `xss-chk.py`.
+- **Missing Libraries**: If you encounter errors related to missing libraries (`requests` or `tqdm`), make sure to install them using `pip` as mentioned in the Requirements section.
 
 ---
-
-## License
-
-This script is provided for educational and testing purposes. Use it responsibly on applications you own or have explicit permission to test.
