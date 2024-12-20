@@ -26,26 +26,6 @@ def read_payloads_from_file(file_path):
         print(f"An unexpected error occurred: {e}")
         return []
 
-# Function to read all payload files in a folder (with file type filtering)
-def read_payloads_from_folder(folder_path):
-    payloads = []
-    try:
-        for filename in os.listdir(folder_path):
-            file_path = os.path.join(folder_path, filename)
-            if os.path.isfile(file_path) and (filename.endswith('.txt') or filename.endswith('.payload')):  # Filter for specific file types
-                print(f"Reading payloads from file: {file_path}")
-                file_payloads = read_payloads_from_file(file_path)
-                payloads.extend(file_payloads)
-        if not payloads:
-            print(f"No valid payloads found in folder '{folder_path}'.")
-    except FileNotFoundError:
-        print(f"Error: The folder '{folder_path}' was not found.")
-    except PermissionError:
-        print(f"Error: Permission denied when accessing '{folder_path}'.")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-    return payloads
-
 # Function to test for Stored XSS
 def test_stored_xss(stored_xss_url, payload, timeout):
     try:
@@ -111,21 +91,69 @@ def print_summary(total_payloads, stored_vulnerabilities, reflected_vulnerabilit
     logging.info(f"Stored XSS Vulnerabilities Found: {stored_vulnerabilities}")
     logging.info(f"Reflected XSS Vulnerabilities Found: {reflected_vulnerabilities}")
 
+# Function to list and select a payload file
+def list_payload_files():
+    # Get the current script directory and the payloads folder path relative to it
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    payloads_folder = os.path.join(script_dir, 'payloads')
+
+    # Check if the payloads folder exists
+    if not os.path.exists(payloads_folder):
+        print(f"Error: The payloads folder '{payloads_folder}' does not exist.")
+        exit()
+
+    print("\nAvailable Payload Files:")
+    payload_files = [f for f in os.listdir(payloads_folder) if f.endswith('.txt')]
+
+    if not payload_files:
+        print(f"No .txt payload files found in {payloads_folder}. Exiting.")
+        exit()
+
+    for idx, file_name in enumerate(payload_files, 1):
+        # Display the file names
+        print(f"{idx}. {file_name}")
+    
+    return payloads_folder, payload_files
+
+def get_payload_file():
+    # List payload files and choose one
+    payloads_folder, payload_files = list_payload_files()
+    
+    # Ask user to select a file
+    try:
+        file_choice = int(input("\nSelect a payload file by number: "))
+        if 1 <= file_choice <= len(payload_files):
+            selected_file = payload_files[file_choice - 1]
+            print(f"Selected file: {selected_file}")
+            return os.path.join(payloads_folder, selected_file)
+        else:
+            print("Invalid choice. Exiting.")
+            exit()
+    except ValueError:
+        print("Invalid input. Exiting.")
+        exit()
+
+# Function to automatically prepend http:// or https:// to the URL if necessary
+def validate_url(url):
+    if not url.startswith("http"):
+        # If it doesn't start with http or https, assume http:// by default
+        return "http://" + url
+    return url
+
 def main():
     print("Welcome to the XSS Testing Script!")
 
     # Get user input for URLs
-    stored_xss_url = input("Enter the URL for Stored XSS testing: ")
-    reflected_xss_url = input("Enter the URL for Reflected XSS testing (with GET parameter): ")
+    stored_xss_url = input("Enter the URL for Stored XSS testing (e.g., example.com/submit): ")
+    reflected_xss_url = input("Enter the URL for Reflected XSS testing (e.g., example.com/search?q=): ")
 
-    # Validate URLs
-    if not stored_xss_url.startswith("http") or not reflected_xss_url.startswith("http"):
-        print("Invalid URL(s) entered. Please ensure they are complete URLs starting with 'http'.")
-        return
+    # Automatically prepend http:// or https:// to the URL if missing
+    stored_xss_url = validate_url(stored_xss_url)
+    reflected_xss_url = validate_url(reflected_xss_url)
 
-    # Specify the payload folder
-    payload_folder_path = input("Enter the path to the folder containing payload files: ")
-    payloads = read_payloads_from_folder(payload_folder_path)
+    # List and choose payload file
+    payload_file_path = get_payload_file()
+    payloads = read_payloads_from_file(payload_file_path)
 
     # Check if there are any payloads to test
     if not payloads:
