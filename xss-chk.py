@@ -3,179 +3,178 @@ import requests
 from urllib.parse import quote
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from tqdm import tqdm  # For progress bar
+from tqdm import tqdm  # Для индикатора прогресса
 
-# Setting up logging
+# Настройка логирования
 logging.basicConfig(filename='xss_test_results.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
-# Function to read payloads from a file
+# Функция для чтения полезных нагрузок из файла
 def read_payloads_from_file(file_path):
     try:
         with open(file_path, 'r') as file:
             payloads = [line.strip() for line in file if line.strip()]
             if not payloads:
-                print(f"Warning: The file '{file_path}' is empty.")
+                print(f"Предупреждение: Файл '{file_path}' пуст.")
             return payloads
     except FileNotFoundError:
-        print(f"Error: The file '{file_path}' was not found.")
+        print(f"Ошибка: Файл '{file_path}' не найден.")
         return []
     except PermissionError:
-        print(f"Error: Permission denied when accessing '{file_path}'.")
+        print(f"Ошибка: Отказано в доступе к файлу '{file_path}'.")
         return []
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"Произошла непредвиденная ошибка: {e}")
         return []
 
-# Function to test for Stored XSS
+# Функция для тестирования Stored XSS
 def test_stored_xss(stored_xss_url, payload, timeout):
     try:
         response = requests.post(stored_xss_url, data={'input': payload}, timeout=timeout)
-        response.raise_for_status()  # Check for HTTP errors
+        response.raise_for_status()  # Проверка на ошибки HTTP
         if response.status_code == 404:
-            logging.warning(f"Page not found: {stored_xss_url} with payload {payload}")
+            logging.warning(f"Страница не найдена: {stored_xss_url} с нагрузкой {payload}")
         elif response.status_code == 500:
-            logging.error(f"Server error at {stored_xss_url} with payload {payload}")
+            logging.error(f"Ошибка сервера на {stored_xss_url} с нагрузкой {payload}")
         return payload, "<script>" in response.text or "onerror" in response.text
     except requests.exceptions.RequestException as e:
-        logging.error(f"Error with request: {e} for payload: {payload}")
+        logging.error(f"Ошибка запроса: {e} для нагрузки: {payload}")
         return payload, False
 
-# Function to test for Reflected XSS
+# Функция для тестирования Reflected XSS
 def test_reflected_xss(reflected_xss_url, payload, timeout):
     try:
         response = requests.get(reflected_xss_url + quote(payload), timeout=timeout)
-        response.raise_for_status()  # Check for HTTP errors
+        response.raise_for_status()  # Проверка на ошибки HTTP
         if response.status_code == 404:
-            logging.warning(f"Page not found: {reflected_xss_url} with payload {payload}")
+            logging.warning(f"Страница не найдена: {reflected_xss_url} с нагрузкой {payload}")
         elif response.status_code == 500:
-            logging.error(f"Server error at {reflected_xss_url} with payload {payload}")
+            logging.error(f"Ошибка сервера на {reflected_xss_url} с нагрузкой {payload}")
         return payload, "<script>" in response.text or "onerror" in response.text
     except requests.exceptions.RequestException as e:
-        logging.error(f"Error with request: {e} for payload: {payload}")
+        logging.error(f"Ошибка запроса: {e} для нагрузки: {payload}")
         return payload, False
 
-# Function to run stored and reflected XSS tests concurrently
+# Функция для параллельного выполнения тестов stored и reflected XSS
 def run_tests_concurrently(stored_xss_url, reflected_xss_url, payloads, timeout):
     stored_vulnerabilities = 0
     reflected_vulnerabilities = 0
 
     with ThreadPoolExecutor(max_workers=5) as executor:
-        # Run Stored XSS tests
+        # Запуск тестов Stored XSS
         stored_results = executor.map(lambda payload: test_stored_xss(stored_xss_url, payload, timeout), payloads)
-        for payload, result in tqdm(stored_results, total=len(payloads), desc="Testing Stored XSS", ncols=100):
+        for payload, result in tqdm(stored_results, total=len(payloads), desc="Тестирование Stored XSS", ncols=100):
             if result:
-                logging.info(f"[+] Stored XSS Vulnerability Found with Payload: {payload}")
-                print(f"[+] Stored XSS Vulnerability Found with Payload: {payload}")
+                logging.info(f"[+] Найдена уязвимость Stored XSS с нагрузкой: {payload}")
+                print(f"[+] Найдена уязвимость Stored XSS с нагрузкой: {payload}")
                 stored_vulnerabilities += 1
             else:
-                logging.info(f"[-] No Stored XSS Vulnerability Detected with Payload: {payload}")
+                logging.info(f"[-] Уязвимость Stored XSS не обнаружена с нагрузкой: {payload}")
 
-        # Run Reflected XSS tests
+        # Запуск тестов Reflected XSS
         reflected_results = executor.map(lambda payload: test_reflected_xss(reflected_xss_url, payload, timeout), payloads)
-        for payload, result in tqdm(reflected_results, total=len(payloads), desc="Testing Reflected XSS", ncols=100):
+        for payload, result in tqdm(reflected_results, total=len(payloads), desc="Тестирование Reflected XSS", ncols=100):
             if result:
-                logging.info(f"[+] Reflected XSS Vulnerability Found with Payload: {payload}")
-                print(f"[+] Reflected XSS Vulnerability Found with Payload: {payload}")
+                logging.info(f"[+] Найдена уязвимость Reflected XSS с нагрузкой: {payload}")
+                print(f"[+] Найдена уязвимость Reflected XSS с нагрузкой: {payload}")
                 reflected_vulnerabilities += 1
             else:
-                logging.info(f"[-] No Reflected XSS Vulnerability Detected with Payload: {payload}")
+                logging.info(f"[-] Уязвимость Reflected XSS не обнаружена с нагрузкой: {payload}")
 
     return stored_vulnerabilities, reflected_vulnerabilities
 
 def print_summary(total_payloads, stored_vulnerabilities, reflected_vulnerabilities):
-    print("\n--- Summary of XSS Testing ---")
-    print(f"Total Payloads Tested: {total_payloads}")
-    print(f"Stored XSS Vulnerabilities Found: {stored_vulnerabilities}")
-    print(f"Reflected XSS Vulnerabilities Found: {reflected_vulnerabilities}")
-    logging.info(f"Total Payloads Tested: {total_payloads}")
-    logging.info(f"Stored XSS Vulnerabilities Found: {stored_vulnerabilities}")
-    logging.info(f"Reflected XSS Vulnerabilities Found: {reflected_vulnerabilities}")
+    print("\n--- Итоги тестирования XSS ---")
+    print(f"Всего протестировано нагрузок: {total_payloads}")
+    print(f"Найдено уязвимостей Stored XSS: {stored_vulnerabilities}")
+    print(f"Найдено уязвимостей Reflected XSS: {reflected_vulnerabilities}")
+    logging.info(f"Всего протестировано нагрузок: {total_payloads}")
+    logging.info(f"Найдено уязвимостей Stored XSS: {stored_vulnerabilities}")
+    logging.info(f"Найдено уязвимостей Reflected XSS: {reflected_vulnerabilities}")
 
-# Function to list and select a payload file
+# Функция для выбора файла с нагрузками
 def list_payload_files():
-    # Get the current script directory and the payloads folder path relative to it
+    # Получаем путь к папке со скриптом и папке с нагрузками
     script_dir = os.path.dirname(os.path.abspath(__file__))
     payloads_folder = os.path.join(script_dir, 'payloads')
 
-    # Check if the payloads folder exists
+    # Проверяем существование папки с нагрузками
     if not os.path.exists(payloads_folder):
-        print(f"Error: The payloads folder '{payloads_folder}' does not exist.")
+        print(f"Ошибка: Папка с нагрузками '{payloads_folder}' не существует.")
         exit()
 
-    print("\nAvailable Payload Files:")
+    print("\nДоступные файлы с нагрузками:")
     payload_files = [f for f in os.listdir(payloads_folder) if f.endswith('.txt')]
 
     if not payload_files:
-        print(f"No .txt payload files found in {payloads_folder}. Exiting.")
+        print(f"В папке {payloads_folder} не найдено файлов .txt. Выход.")
         exit()
 
     for idx, file_name in enumerate(payload_files, 1):
-        # Display the file names
         print(f"{idx}. {file_name}")
     
     return payloads_folder, payload_files
 
 def get_payload_file():
-    # List payload files and choose one
+    # Выводим список файлов с нагрузками
     payloads_folder, payload_files = list_payload_files()
     
-    # Ask user to select a file
+    # Просим пользователя выбрать файл
     try:
-        file_choice = int(input("\nSelect a payload file by number: "))
+        file_choice = int(input("\nВыберите файл с нагрузками по номеру: "))
         if 1 <= file_choice <= len(payload_files):
             selected_file = payload_files[file_choice - 1]
-            print(f"Selected file: {selected_file}")
+            print(f"Выбран файл: {selected_file}")
             return os.path.join(payloads_folder, selected_file)
         else:
-            print("Invalid choice. Exiting.")
+            print("Неверный выбор. Выход.")
             exit()
     except ValueError:
-        print("Invalid input. Exiting.")
+        print("Неверный ввод. Выход.")
         exit()
 
-# Function to automatically prepend http:// or https:// to the URL if necessary
+# Функция для автоматического добавления http:// или https:// к URL при необходимости
 def validate_url(url):
     if not url.startswith("http"):
-        # If it doesn't start with http or https, assume http:// by default
+        # Если URL не начинается с http/https, добавляем http:// по умолчанию
         return "http://" + url
     return url
 
 def main():
-    print("Welcome to the XSS Testing Script!")
+    print("Добро пожаловать в скрипт тестирования XSS!")
 
-    # Get user input for URLs
-    stored_xss_url = input("Enter the URL for Stored XSS testing (e.g., example.com/submit): ")
-    reflected_xss_url = input("Enter the URL for Reflected XSS testing (e.g., example.com/search?q=): ")
+    # Получаем URL от пользователя
+    stored_xss_url = input("Введите URL для тестирования Stored XSS (например, example.com/submit): ")
+    reflected_xss_url = input("Введите URL для тестирования Reflected XSS (например, example.com/search?q=): ")
 
-    # Automatically prepend http:// or https:// to the URL if missing
+    # Автоматически добавляем http:// или https:// если нужно
     stored_xss_url = validate_url(stored_xss_url)
     reflected_xss_url = validate_url(reflected_xss_url)
 
-    # List and choose payload file
+    # Выбираем файл с нагрузками
     payload_file_path = get_payload_file()
     payloads = read_payloads_from_file(payload_file_path)
 
-    # Check if there are any payloads to test
+    # Проверяем наличие нагрузок
     if not payloads:
-        print("No valid payloads found. Exiting.")
+        print("Нет подходящих нагрузок. Выход.")
         return
 
-    # Get timeout value
+    # Получаем значение таймаута
     try:
-        timeout = float(input("Enter the timeout value for requests (in seconds, e.g., 10): "))
+        timeout = float(input("Введите таймаут для запросов (в секундах, например, 10): "))
     except ValueError:
-        print("Invalid timeout value. Using default timeout of 10 seconds.")
+        print("Неверное значение таймаута. Используется значение по умолчанию: 10 секунд.")
         timeout = 10.0
 
-    # Confirm the user wants to proceed
-    proceed = input("\nDo you want to proceed with testing? (yes/no): ")
+    # Подтверждение начала тестирования
+    proceed = input("\nХотите продолжить тестирование? (yes/no): ")
     if proceed.lower() == 'yes':
         stored_vulnerabilities, reflected_vulnerabilities = run_tests_concurrently(stored_xss_url, reflected_xss_url, payloads, timeout)
         print_summary(len(payloads), stored_vulnerabilities, reflected_vulnerabilities)
     else:
-        print("Testing aborted.")
+        print("Тестирование отменено.")
 
-    print("XSS Tests Completed.")
+    print("Тестирование XSS завершено.")
 
 if __name__ == "__main__":
     main()
